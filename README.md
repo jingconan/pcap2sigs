@@ -34,12 +34,13 @@ The ID of a node is the sequence of its ip addresses in the set defined by the f
 
 Example
 -----------------
-254.64.206.11 255.31.232.95 240.28.34.117
-G0
-0 -> 1
-G1
-1 -> 2
-2 -> 0
+
+    254.64.206.11 255.31.232.95 240.28.34.117
+    G0
+    0 -> 1
+    G1
+    1 -> 2
+    2 -> 0
 
 
 
