@@ -44,6 +44,11 @@ Example
 
 
 
+Acknowledgement
+---------------
+The pcapSupport.c and pcapSupport.h comes from **pcap Parser and Utitilies** written by "Zow" Terry Brugger. Thanks him.
+
+(https://sourceforge.net/projects/pcaputils/)
 
 LICENSE
 ----------------
