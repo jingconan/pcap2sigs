@@ -248,6 +248,11 @@ private:
 };
 
 #define USEC_LEN 6
+#define PT_ICMP 1
+#define PT_IP 4
+#define PT_TCP 6
+#define PT_UDP 17
+
 
 int parseIntervalSize(const char * str, ULInt & sec, ULInt & usec) {
     bool only_secs = false;
@@ -315,7 +320,9 @@ int main(int argc, char** argv)
     NodeSet nodes;
     bool first = true;
 
+    int i = 0, j = 0;
     while (true) {
+        ++i;
         const u_char* packet = pcap_next(infile, &pkthdr);
 
 
@@ -330,31 +337,50 @@ int main(int argc, char** argv)
             first = false;
         }
 
-        SDPair sd = ana.checkPkt(parsedPacket, pkthdr);
-        nodes.insert(sd.first);
-        // cout<< "sd.first: " <<  sd.first << endl;
-        nodes.insert(sd.second);
-        // cout<< "sd.second: " <<  sd.second << endl;
-        
-        // if (print_flag) {
-        //     printf("ts: %ld.%ld src ip: %u.%u.%u.%u, dst ip: %u.%u.%u.%u\n", 
-        //             pkthdr.ts.tv_sec,
-        //             pkthdr.ts.tv_usec,
-        //             parsedPacket.srcIpQ1, 
-        //             parsedPacket.srcIpQ2,
-        //             parsedPacket.srcIpQ3,
-        //             parsedPacket.srcIpQ4, 
-        //             parsedPacket.dstIpQ1,
-        //             parsedPacket.dstIpQ2,
-        //             parsedPacket.dstIpQ3,
-        //             parsedPacket.dstIpQ4);
-        // }
+        /* ICMP (1), TCP (6) or UDP (17)*/
+        u_char prot = parsedPacket.protocol;
+        // if ((prot == PT_ICMP) || (prot == PT_TCP) || (prot == PT_UDP)) {
+        if ((prot == PT_TCP) || (prot == PT_UDP)) {
+        // cout << "proto: " << (int) prot << endl;
+        // if ((prot == PT_IP) || (prot == PT_TCP) || (prot == PT_UDP) || \
+        //         (prot == PT_ICMP)) {
+            ++j;
+            SDPair sd = ana.checkPkt(parsedPacket, pkthdr);
+            nodes.insert(sd.first);
+            // cout<< "sd.first: " <<  sd.first << endl;
+            // std::pair<NodeSet::iterator,bool> ret;
+            nodes.insert(sd.second);
+            // cout<< "sd.second: " <<  sd.second << endl;
+            // string msg = ret.second ? "True" : "False";
+            // cout << msg << endl;
+            // cout << "i:" << i << " j: " 
+            //      << j <<" node.size: " << nodes.size() << endl;
+
+            // if (print_flag) {
+            //     printf("ts: %ld.%ld src ip: %u.%u.%u.%u, dst ip: %u.%u.%u.%u\n", 
+            //             pkthdr.ts.tv_sec,
+            //             pkthdr.ts.tv_usec,
+            //             parsedPacket.srcIpQ1, 
+            //             parsedPacket.srcIpQ2,
+            //             parsedPacket.srcIpQ3,
+            //             parsedPacket.srcIpQ4, 
+            //             parsedPacket.dstIpQ1,
+            //             parsedPacket.dstIpQ2,
+            //             parsedPacket.dstIpQ3,
+            //             parsedPacket.dstIpQ4);
+            // }
+
+        }
 
     }
 
+    // cout << "i:" << i << " j: " 
+    //      << j <<" node.size: " << nodes.size() << endl;
     pcap_close(infile);
 
     NodeSet::iterator sit;
+    // cout << nodes.size() << endl;
+    // return 0;
     for (sit = nodes.begin(); sit != nodes.end(); ++sit) {
         cout << *sit << ' ';
     }
