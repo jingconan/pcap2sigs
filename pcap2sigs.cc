@@ -196,7 +196,7 @@ public:
         return sd;
     }
     void write(ostream &out) {
-        for (int i = 0; i < sigs_.size(); ++i) {
+        for (size_t i = 0; i < sigs_.size(); ++i) {
             out << "G" << i << endl;
             out << sigs_[i];
         }
@@ -205,7 +205,7 @@ public:
     void write(ostream &out, const NodeVec & nv) {
         // for each graph
         int s1, s2;
-        for (int i = 0; i < sigs_.size(); ++i) {
+        for (size_t i = 0; i < sigs_.size(); ++i) {
             out << "G" << i << endl;
             Graph::const_iterator it;
             const Graph & v = sigs_[i];
@@ -309,7 +309,7 @@ int main(int argc, char** argv)
     }
 
     bool debug_flag = false;
-    if ( (argc > 3) && (strcmp(argv[3], "-debug")==0) ) {
+    if ( (argc == 4) && (strcmp(argv[3], "-debug")==0) ) {
         debug_flag = true;
     }
 
@@ -339,11 +339,40 @@ int main(int argc, char** argv)
 
         /* ICMP (1), TCP (6) or UDP (17)*/
         u_char prot = parsedPacket.protocol;
+        bool prot_flag = false;
+#ifdef E_IP
+        if (prot == PT_IP) {
+            prot_flag = true;
+        }
+        if (debug_flag) printf("Test PT_IP\n");
+#endif
+#ifdef E_TCP
+        if (prot == PT_TCP) {
+            prot_flag = true;
+        }
+
+        if (debug_flag) printf("Test PT_TCP\n");
+#endif
+#ifdef E_ICMP
+        if (prot == PT_ICMP) {
+            prot_flag = true;
+        }
+        if (debug_flag) printf("Test PT_ICMP\n");
+#endif
+#ifdef E_UDP
+        if (prot == PT_UDP) {
+            prot_flag = true;
+        }
+        if (debug_flag) printf("Test PT_UDP\n");
+#endif
+
+
         // if ((prot == PT_ICMP) || (prot == PT_TCP) || (prot == PT_UDP)) {
         // if ((prot == PT_TCP) || (prot == PT_UDP)) {
         // cout << "proto: " << (int) prot << endl;
-        if ((prot == PT_IP) || (prot == PT_TCP) || (prot == PT_UDP) || \
-                (prot == PT_ICMP)) {
+        // if ((prot == PT_IP) || (prot == PT_TCP) || (prot == PT_UDP) || \
+                // (prot == PT_ICMP)) {
+        if (prot_flag) {
             ++j;
             SDPair sd = ana.checkPkt(parsedPacket, pkthdr);
             nodes.insert(sd.first);
