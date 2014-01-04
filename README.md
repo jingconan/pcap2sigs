@@ -12,6 +12,13 @@ All SIGs share the node set, which is the set of IP addresses in this pcap
 file. For the *kth* SIG, if there is packet in segment *k* whose source is
 node i and the destination is node j, then edge (i, j) \in G_k.
 
+Packet Protocols
+===================
+Now pcap2sigs can only parse packets of TCP, IP, ICMP and UDP protocols. 
+You can enable each protocol by modifying -D option of CFLAGS in Makfile.
+For example
+    CFLAGS=-Wall -D E_TCP -D E_UDP -D E_ICMP
+enables packets of TCP, UDP and ICMP protocols.
 
 Usage
 =======================
