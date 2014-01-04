@@ -95,30 +95,31 @@ struct packet_struct
     u_char dstIpQ2;
     u_char dstIpQ3;
     u_char dstIpQ4;
-    u_char* ipOpts;
+    // We don't care what is left
+    // u_char* ipOpts;
     /* TCP Header */
-    u_int16_t srcPort; /* Also UDP */
-    u_int16_t dstPort; /* Also UDP */
-    u_int32_t seqNum;
-    u_int32_t ackNum;
-    u_char tcpHdrLen; /* This is the number of words in the TCP portion of the header. */
-    u_char urg;
-    u_char ack;
-    u_char psh;
-    u_char rst;
-    u_char syn;
-    u_char fin;
-    u_int16_t tcpWindow;
-    u_int16_t xsum;
-    u_int16_t urgPtr;
-    u_char* tcpOpts;
+    // u_int16_t srcPort; /* Also UDP */
+    // u_int16_t dstPort; /* Also UDP */
+    // u_int32_t seqNum;
+    // u_int32_t ackNum;
+    // u_char tcpHdrLen; /* This is the number of words in the TCP portion of the header. */
+    // u_char urg;
+    // u_char ack;
+    // u_char psh;
+    // u_char rst;
+    // u_char syn;
+    // u_char fin;
+    // u_int16_t tcpWindow;
+    // u_int16_t xsum;
+    // u_int16_t urgPtr;
+    // u_char* tcpOpts;
     /* UDP Header */
-    u_int16_t udpDatLen;
+    // u_int16_t udpDatLen;
     /* ICMP Header */
-    u_char icmpType;
-    u_char icmpCode;
-    u_int16_t icmpDataLen;
-    u_char* icmpData;
+    // u_char icmpType;
+    // u_char icmpCode;
+    // u_int16_t icmpDataLen;
+    // u_char* icmpData;
     /* Whatever is left is data, which we discard */
 };
 

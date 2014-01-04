@@ -3,6 +3,7 @@ CC=gcc
 CPP=g++
 #  CFLAGS=-Wall -I/usr/sww/include -L/usr/sww/lib -lpcap -lsocket -lnsl
 #  CFLAGS=-Wall -D E_TCP -D E_UDP -D E_ICMP -D E_IP
+#  CFLAGS=-Wall -D E_ALL
 CFLAGS=-Wall -D E_TCP -D E_UDP -D E_ICMP
 LIBS=-lpcap
 

@@ -52,9 +52,10 @@ struct IP {
                ((q1 == a.q1) && (q2 == a.q2) && (q3 < a.q3)) || \
                ((q1 == a.q1) && (q2 == a.q2) && (q3 == a.q3) && (q4 < a.q4));
     }
-    // void print() {
-    //     printf("%u.%u.%u.%u", ((uint) q1, (uint)q2, (uint)q3, (uint)q4));
-    // }
+
+    void print() {
+        cout << q1 << "." << q2 << "." << q3 << "." << q4 << endl;
+    }
 
 
     u_char q1;
@@ -172,29 +173,30 @@ public:
 
     SDPair checkPkt(const packet_struct & pkt, const pcap_pkthdr & hdr) {
         TimeStruct pkt_time = getPktTime(hdr);
+        if (print_) {
+            if (max_time_ < pkt_time) {
+                max_time_ = pkt_time;
+            }
+        }
         SDPair sd = getPktSDPair(pkt);
-        // cout << sd.first << endl;
-        // cout << sd.second << endl;
 
+        // Create new SIG if time out
         if (interv_size_ < difftime(pkt_time, last_interv_stime_)) {
             last_interv_stime_.add(interv_size_);
             sigs_.push_back(Graph());
         }
+
         Graph & sig = sigs_.back();
-        // printf("sig.size(): %ld\n", sig.size());
         Graph::iterator it = sig.find(sd);
-        if (it == sig.end()) {
-            sig[sd] = 1;
-            if (print_) {
-                cout << "Edge " << sig.size() << ": " << sd << endl;
-            }
+        if (it != sig.end()) {
+            ++(it->second);
         } else {
-            // cout << "find the key " << sd << endl;
-            it->second += 1;
+            sig[sd] = 1;
+            if (print_) { cout << "Edge " << sig.size() << ": " << sd << endl; }
         }
-        // printf("sig.size(): %ld\n", sig.size());
         return sd;
     }
+
     void write(ostream &out) {
         for (size_t i = 0; i < sigs_.size(); ++i) {
             out << "G" << i << endl;
@@ -218,9 +220,16 @@ public:
         }
     }
 
+    void debugInfo() {
+        TimeStruct td = difftime(max_time_, min_time_);
+        cout << "Time Range: " << td.getSec() << "." << td.getUSec() << endl;
+    }
+
 
     void setInitialTime(TimeStruct init_time) {
         last_interv_stime_ = init_time;
+        min_time_ = init_time;
+        max_time_ = init_time;
         initialized_ = true;
     }
 
@@ -234,8 +243,8 @@ public:
     TimeStruct getPktTime(const pcap_pkthdr &hdr) {
         return hdr.ts;
     }
+
     SDPair getPktSDPair(const packet_struct &pkt) {
-        // Stub
         return make_pair(IP(pkt.srcIpQ1, pkt.srcIpQ2, pkt.srcIpQ3, pkt.srcIpQ4), 
                 IP(pkt.dstIpQ1, pkt.dstIpQ2, pkt.dstIpQ3, pkt.dstIpQ4));
     }
@@ -245,6 +254,9 @@ private:
     TimeStruct last_interv_stime_;
     TimeStruct interv_size_;
     GraphVec sigs_;
+
+    TimeStruct min_time_;
+    TimeStruct max_time_;
 };
 
 #define USEC_LEN 6
@@ -301,6 +313,9 @@ int main(int argc, char** argv)
         fprintf(stderr, "Unable to open %s: %s", argv[1], errbuf);
         return -2;
     }
+    int dlt = pcap_datalink(infile);
+
+    set_link_type(dlt);
 
 
     ULInt sec, usec;
@@ -312,33 +327,33 @@ int main(int argc, char** argv)
     if ( (argc == 4) && (strcmp(argv[3], "-debug")==0) ) {
         debug_flag = true;
     }
+    
+    if (debug_flag) { printf("dlt: %i DLT_RAW: %i\n", dlt, DLT_RAW); }
 
     struct pcap_pkthdr pkthdr;
     TimeStruct interv_size(sec, usec);
-    // cout<< "interv_size: " <<  interv_size << endl;
     SIGAnalyzer ana(interv_size, debug_flag);
     NodeSet nodes;
     bool first = true;
+    unsigned long long pkt_num = -1;
 
-    int i = 0, j = 0;
     while (true) {
-        ++i;
+        ++pkt_num;
         const u_char* packet = pcap_next(infile, &pkthdr);
 
-
         if (packet == null) break;
-        if (debug_flag) printf("Captured %u out of %u bytes: \n", pkthdr.caplen, pkthdr.len);
+        // if (debug_flag) printf("Captured %u out of %u bytes: \n", pkthdr.caplen, pkthdr.len);
 
-        struct packet_struct parsedPacket;
-        unpack_packet(packet, &parsedPacket, pkthdr.caplen);
-        // printf("port %d\n", parsedPacket.srcPort);
+        struct packet_struct ps;
+        unpack_packet(packet, &ps, pkthdr.caplen);
+        // printf("port %d\n", ps.srcPort);
         if (first) {
             ana.setInitialTime(pkthdr.ts);
             first = false;
         }
 
         /* ICMP (1), TCP (6) or UDP (17)*/
-        u_char prot = parsedPacket.protocol;
+        u_char prot = ps.protocol;
         bool prot_flag = false;
 #ifdef E_IP
         if (prot == PT_IP) {
@@ -351,65 +366,50 @@ int main(int argc, char** argv)
             prot_flag = true;
         }
 
-        if (debug_flag) printf("Test PT_TCP\n");
+        // if (debug_flag) printf("Test PT_TCP\n");
 #endif
 #ifdef E_ICMP
         if (prot == PT_ICMP) {
             prot_flag = true;
         }
-        if (debug_flag) printf("Test PT_ICMP\n");
+        // if (debug_flag) printf("Test PT_ICMP\n");
 #endif
 #ifdef E_UDP
         if (prot == PT_UDP) {
             prot_flag = true;
         }
-        if (debug_flag) printf("Test PT_UDP\n");
+        // if (debug_flag) printf("Test PT_UDP\n");
 #endif
 
+#ifdef E_ALL
+        prot_flag = true;
+#endif
 
-        // if ((prot == PT_ICMP) || (prot == PT_TCP) || (prot == PT_UDP)) {
-        // if ((prot == PT_TCP) || (prot == PT_UDP)) {
-        // cout << "proto: " << (int) prot << endl;
-        // if ((prot == PT_IP) || (prot == PT_TCP) || (prot == PT_UDP) || \
-                // (prot == PT_ICMP)) {
         if (prot_flag) {
-            ++j;
-            SDPair sd = ana.checkPkt(parsedPacket, pkthdr);
+            SDPair sd = ana.checkPkt(ps, pkthdr);
             nodes.insert(sd.first);
-            // cout<< "sd.first: " <<  sd.first << endl;
-            // std::pair<NodeSet::iterator,bool> ret;
             nodes.insert(sd.second);
-            // cout<< "sd.second: " <<  sd.second << endl;
-            // string msg = ret.second ? "True" : "False";
-            // cout << msg << endl;
-            // cout << "i:" << i << " j: " 
-            //      << j <<" node.size: " << nodes.size() << endl;
 
-            // if (print_flag) {
-            //     printf("ts: %ld.%ld src ip: %u.%u.%u.%u, dst ip: %u.%u.%u.%u\n", 
-            //             pkthdr.ts.tv_sec,
-            //             pkthdr.ts.tv_usec,
-            //             parsedPacket.srcIpQ1, 
-            //             parsedPacket.srcIpQ2,
-            //             parsedPacket.srcIpQ3,
-            //             parsedPacket.srcIpQ4, 
-            //             parsedPacket.dstIpQ1,
-            //             parsedPacket.dstIpQ2,
-            //             parsedPacket.dstIpQ3,
-            //             parsedPacket.dstIpQ4);
-            // }
-
+            if (debug_flag) { 
+                printf("ts: %ld.%ld, src ip: %u.%u.%u.%u, dst ip: %u.%u.%u.%u, proto: %i\n", 
+                        pkthdr.ts.tv_sec,
+                        pkthdr.ts.tv_usec,
+                        ps.srcIpQ1, 
+                        ps.srcIpQ2,
+                        ps.srcIpQ3,
+                        ps.srcIpQ4, 
+                        ps.dstIpQ1,
+                        ps.dstIpQ2,
+                        ps.dstIpQ3,
+                        ps.dstIpQ4, 
+                        ps.protocol);
+            }
         }
-
     }
 
-    // cout << "i:" << i << " j: " 
-    //      << j <<" node.size: " << nodes.size() << endl;
     pcap_close(infile);
 
     NodeSet::iterator sit;
-    // cout << nodes.size() << endl;
-    // return 0;
     for (sit = nodes.begin(); sit != nodes.end(); ++sit) {
         cout << *sit << ' ';
     }
@@ -417,7 +417,9 @@ int main(int argc, char** argv)
     NodeVec nv(nodes.begin(), nodes.end());
     sort(nv.begin(), nv.end());
     ana.write(cout, nv);
-    // pcap_dump_close(outfile);
+    if (debug_flag) ana.debugInfo();
+    if (debug_flag) cout << "IP num: " << nv.size() << endl;
+    if (debug_flag) cout << "Total Packet Num: " << pkt_num << endl;
 
     return 0;
 }
