@@ -309,7 +309,7 @@ int main(int argc, char** argv)
     }
 
     bool debug_flag = false;
-    if ( (argc > 2) && (strcmp(argv[2], "-debug")==0) ) {
+    if ( (argc > 3) && (strcmp(argv[3], "-debug")==0) ) {
         debug_flag = true;
     }
 
@@ -340,10 +340,10 @@ int main(int argc, char** argv)
         /* ICMP (1), TCP (6) or UDP (17)*/
         u_char prot = parsedPacket.protocol;
         // if ((prot == PT_ICMP) || (prot == PT_TCP) || (prot == PT_UDP)) {
-        if ((prot == PT_TCP) || (prot == PT_UDP)) {
+        // if ((prot == PT_TCP) || (prot == PT_UDP)) {
         // cout << "proto: " << (int) prot << endl;
-        // if ((prot == PT_IP) || (prot == PT_TCP) || (prot == PT_UDP) || \
-        //         (prot == PT_ICMP)) {
+        if ((prot == PT_IP) || (prot == PT_TCP) || (prot == PT_UDP) || \
+                (prot == PT_ICMP)) {
             ++j;
             SDPair sd = ana.checkPkt(parsedPacket, pkthdr);
             nodes.insert(sd.first);
